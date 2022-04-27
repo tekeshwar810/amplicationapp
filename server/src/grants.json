@@ -162,12 +162,6 @@
     "attributes": "*"
   },
   {
-    "role": "admin",
-    "resource": "Task",
-    "action": "delete:any",
-    "attributes": "*"
-  },
-  {
     "role": "user",
     "resource": "Task",
     "action": "read:any",
