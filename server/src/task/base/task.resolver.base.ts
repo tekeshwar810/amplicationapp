@@ -19,6 +19,8 @@ import * as gqlUserRoles from "../../auth/gqlUserRoles.decorator";
 import * as abacUtil from "../../auth/abac.util";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { CreateTaskArgs } from "./CreateTaskArgs";
 import { UpdateTaskArgs } from "./UpdateTaskArgs";
 import { DeleteTaskArgs } from "./DeleteTaskArgs";
@@ -54,80 +56,40 @@ export class TaskResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [Task])
   @nestAccessControl.UseRoles({
     resource: "Task",
     action: "read",
     possession: "any",
   })
-  async tasks(
-    @graphql.Args() args: TaskFindManyArgs,
-    @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<Task[]> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "read",
-      possession: "any",
-      resource: "Task",
-    });
-    const results = await this.service.findMany(args);
-    return results.map((result) => permission.filter(result));
+  async tasks(@graphql.Args() args: TaskFindManyArgs): Promise<Task[]> {
+    return this.service.findMany(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => Task, { nullable: true })
   @nestAccessControl.UseRoles({
     resource: "Task",
     action: "read",
     possession: "own",
   })
-  async task(
-    @graphql.Args() args: TaskFindUniqueArgs,
-    @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<Task | null> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "read",
-      possession: "own",
-      resource: "Task",
-    });
+  async task(@graphql.Args() args: TaskFindUniqueArgs): Promise<Task | null> {
     const result = await this.service.findOne(args);
     if (result === null) {
       return null;
     }
-    return permission.filter(result);
+    return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Task)
   @nestAccessControl.UseRoles({
     resource: "Task",
     action: "create",
     possession: "any",
   })
-  async createTask(
-    @graphql.Args() args: CreateTaskArgs,
-    @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<Task> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "create",
-      possession: "any",
-      resource: "Task",
-    });
-    const invalidAttributes = abacUtil.getInvalidAttributes(
-      permission,
-      args.data
-    );
-    if (invalidAttributes.length) {
-      const properties = invalidAttributes
-        .map((attribute: string) => JSON.stringify(attribute))
-        .join(", ");
-      const roles = userRoles
-        .map((role: string) => JSON.stringify(role))
-        .join(",");
-      throw new apollo.ApolloError(
-        `providing the properties: ${properties} on ${"Task"} creation is forbidden for roles: ${roles}`
-      );
-    }
+  async createTask(@graphql.Args() args: CreateTaskArgs): Promise<Task> {
     // @ts-ignore
     return await this.service.create({
       ...args,
@@ -135,6 +97,7 @@ export class TaskResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Task)
   @nestAccessControl.UseRoles({
     resource: "Task",
@@ -145,27 +108,6 @@ export class TaskResolverBase {
     @graphql.Args() args: UpdateTaskArgs,
     @gqlUserRoles.UserRoles() userRoles: string[]
   ): Promise<Task | null> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "update",
-      possession: "any",
-      resource: "Task",
-    });
-    const invalidAttributes = abacUtil.getInvalidAttributes(
-      permission,
-      args.data
-    );
-    if (invalidAttributes.length) {
-      const properties = invalidAttributes
-        .map((attribute: string) => JSON.stringify(attribute))
-        .join(", ");
-      const roles = userRoles
-        .map((role: string) => JSON.stringify(role))
-        .join(",");
-      throw new apollo.ApolloError(
-        `providing the properties: ${properties} on ${"Task"} update is forbidden for roles: ${roles}`
-      );
-    }
     try {
       // @ts-ignore
       return await this.service.update({

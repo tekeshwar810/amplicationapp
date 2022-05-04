@@ -16,7 +16,10 @@ export const ProductEdit = (props: EditProps): React.ReactElement => {
   return (
     <Edit {...props}>
       <SimpleForm>
+        <TextInput label="address" source="address" />
+        <TextInput label="data" source="data" />
         <TextInput label="email" source="email" type="email" />
+        <TextInput label="emorphism" source="emorphism" />
         <TextInput label="fullName" source="fullName" />
         <DateTimeInput label="Start Date" source="startDate" />
         <ReferenceArrayInput

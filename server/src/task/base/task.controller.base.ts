@@ -20,6 +20,8 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { TaskService } from "../task.service";
 import { TaskCreateInput } from "./TaskCreateInput";
 import { TaskWhereInput } from "./TaskWhereInput";
@@ -35,6 +37,7 @@ export class TaskControllerBase {
   ) {}
 
   @common.UseInterceptors(nestMorgan.MorganInterceptor("combined"))
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.UseGuards(
     defaultAuthGuard.DefaultAuthGuard,
     nestAccessControl.ACGuard
@@ -47,28 +50,7 @@ export class TaskControllerBase {
   })
   @swagger.ApiCreatedResponse({ type: Task })
   @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async create(
-    @common.Body() data: TaskCreateInput,
-    @nestAccessControl.UserRoles() userRoles: string[]
-  ): Promise<Task> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "create",
-      possession: "any",
-      resource: "Task",
-    });
-    const invalidAttributes = abacUtil.getInvalidAttributes(permission, data);
-    if (invalidAttributes.length) {
-      const properties = invalidAttributes
-        .map((attribute: string) => JSON.stringify(attribute))
-        .join(", ");
-      const roles = userRoles
-        .map((role: string) => JSON.stringify(role))
-        .join(",");
-      throw new errors.ForbiddenException(
-        `providing the properties: ${properties} on ${"Task"} creation is forbidden for roles: ${roles}`
-      );
-    }
+  async create(@common.Body() data: TaskCreateInput): Promise<Task> {
     return await this.service.create({
       data: data,
       select: {
@@ -81,6 +63,7 @@ export class TaskControllerBase {
   }
 
   @common.UseInterceptors(nestMorgan.MorganInterceptor("combined"))
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.UseGuards(
     defaultAuthGuard.DefaultAuthGuard,
     nestAccessControl.ACGuard
@@ -94,19 +77,9 @@ export class TaskControllerBase {
   @swagger.ApiOkResponse({ type: [Task] })
   @swagger.ApiForbiddenResponse()
   @ApiNestedQuery(TaskFindManyArgs)
-  async findMany(
-    @common.Req() request: Request,
-    @nestAccessControl.UserRoles() userRoles: string[]
-  ): Promise<Task[]> {
+  async findMany(@common.Req() request: Request): Promise<Task[]> {
     const args = plainToClass(TaskFindManyArgs, request.query);
-
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "read",
-      possession: "any",
-      resource: "Task",
-    });
-    const results = await this.service.findMany({
+    return this.service.findMany({
       ...args,
       select: {
         createdAt: true,
@@ -115,10 +88,10 @@ export class TaskControllerBase {
         updatedAt: true,
       },
     });
-    return results.map((result) => permission.filter(result));
   }
 
   @common.UseInterceptors(nestMorgan.MorganInterceptor("combined"))
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.UseGuards(
     defaultAuthGuard.DefaultAuthGuard,
     nestAccessControl.ACGuard
@@ -133,15 +106,8 @@ export class TaskControllerBase {
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
   @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
   async findOne(
-    @common.Param() params: TaskWhereUniqueInput,
-    @nestAccessControl.UserRoles() userRoles: string[]
+    @common.Param() params: TaskWhereUniqueInput
   ): Promise<Task | null> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "read",
-      possession: "own",
-      resource: "Task",
-    });
     const result = await this.service.findOne({
       where: params,
       select: {
@@ -156,10 +122,11 @@ export class TaskControllerBase {
         `No resource was found for ${JSON.stringify(params)}`
       );
     }
-    return permission.filter(result);
+    return result;
   }
 
   @common.UseInterceptors(nestMorgan.MorganInterceptor("combined"))
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.UseGuards(
     defaultAuthGuard.DefaultAuthGuard,
     nestAccessControl.ACGuard
@@ -175,28 +142,8 @@ export class TaskControllerBase {
   @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
   async update(
     @common.Param() params: TaskWhereUniqueInput,
-    @common.Body()
-    data: TaskUpdateInput,
-    @nestAccessControl.UserRoles() userRoles: string[]
+    @common.Body() data: TaskUpdateInput
   ): Promise<Task | null> {
-    const permission = this.rolesBuilder.permission({
-      role: userRoles,
-      action: "update",
-      possession: "any",
-      resource: "Task",
-    });
-    const invalidAttributes = abacUtil.getInvalidAttributes(permission, data);
-    if (invalidAttributes.length) {
-      const properties = invalidAttributes
-        .map((attribute: string) => JSON.stringify(attribute))
-        .join(", ");
-      const roles = userRoles
-        .map((role: string) => JSON.stringify(role))
-        .join(",");
-      throw new errors.ForbiddenException(
-        `providing the properties: ${properties} on ${"Task"} update is forbidden for roles: ${roles}`
-      );
-    }
     try {
       return await this.service.update({
         where: params,

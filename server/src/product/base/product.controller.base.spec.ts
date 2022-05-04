@@ -11,27 +11,39 @@ import { ProductService } from "../product.service";
 const nonExistingId = "nonExistingId";
 const existingId = "existingId";
 const CREATE_INPUT = {
+  address: "exampleAddress",
+  data: "exampleData",
   email: "exampleEmail",
+  emorphism: "exampleEmorphism",
   fullName: "exampleFullName",
   id: "exampleId",
   startDate: new Date(),
 };
 const CREATE_RESULT = {
+  address: "exampleAddress",
+  data: "exampleData",
   email: "exampleEmail",
+  emorphism: "exampleEmorphism",
   fullName: "exampleFullName",
   id: "exampleId",
   startDate: new Date(),
 };
 const FIND_MANY_RESULT = [
   {
+    address: "exampleAddress",
+    data: "exampleData",
     email: "exampleEmail",
+    emorphism: "exampleEmorphism",
     fullName: "exampleFullName",
     id: "exampleId",
     startDate: new Date(),
   },
 ];
 const FIND_ONE_RESULT = {
+  address: "exampleAddress",
+  data: "exampleData",
   email: "exampleEmail",
+  emorphism: "exampleEmorphism",
   fullName: "exampleFullName",
   id: "exampleId",
   startDate: new Date(),

@@ -21,7 +21,10 @@ model User {
 }
 
 model Product {
+  address   String?
+  data      String?
   email     String?
+  emorphism String?
   fullName  String
   id        String    @id @default(cuid())
   startDate DateTime?

@@ -17,7 +17,10 @@ export const ProductShow = (props: ShowProps): React.ReactElement => {
   return (
     <Show {...props}>
       <SimpleShowLayout>
+        <TextField label="address" source="address" />
+        <TextField label="data" source="data" />
         <TextField label="email" source="email" />
+        <TextField label="emorphism" source="emorphism" />
         <TextField label="fullName" source="fullName" />
         <TextField label="ID" source="id" />
         <TextField label="Start Date" source="startDate" />
